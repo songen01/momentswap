@@ -68,8 +68,9 @@ export const Widgets = ({ newsResults, randomUsersResults }: any) => {
       aleo && await aleo.default()
       typeof window !== "undefined" && JSON.parse(window?.localStorage.getItem("aleoRecords") as string) && typeof window !== "undefined" && JSON.parse(window?.localStorage.getItem("aleoRecords") as string).forEach((t, i) => {
         const s = aleo?.PrivateKey?.from_string(x1).decryptrecords(JSON.stringify([{ record_ciphertext: t.record_ciphertext, sn_id: t.sn_id }]))
+        const { url: aleoUrl } = aleoHelper()
 
-        s && axios.get('https://vm.aleo.org/api/testnet3/find/transitionID/' + (JSON.parse(s)[0].sn_id)).then(e => {
+        s && axios.get(aleoUrl + '/testnet3/find/transitionID/' + (JSON.parse(s)[0].sn_id)).then(e => {
           console.log(e, "is used");
           var request = indexedDB.open('aleoDB', 1);
 
@@ -130,12 +131,13 @@ export const Widgets = ({ newsResults, randomUsersResults }: any) => {
         page = 0
       }
       // setAleoLoading(true)
+      const { url: aleoUrl, sync_url } = aleoHelper()
 
       while (true) {
         started.current = true;
-        const height = await axios.get('https://vm.aleo.org/api/testnet3/latest/height').then(e => (e.data))
+        const height = await axios.get(aleoUrl + '/testnet3/latest/height').then(e => (e.data))
         console.log("current height: " + height);
-        const response: any = await axios.get('http://58.246.225.150:38015/records', {
+        const response: any = await axios.get(sync_url + '/records', {
           params: {
             start_block: page,
             end_block: page + 1000,
@@ -313,11 +315,12 @@ export const Widgets = ({ newsResults, randomUsersResults }: any) => {
 
       setLoadingRegister(true)
       let selectedRecord = values.record
+      const { url: aleoUrl } = aleoHelper()
 
       workerExecRef.current = workerHelper();
       workerExecRef.current.addEventListener("message", ev => {
         if (ev.data.type == 'EXECUTION_TRANSACTION_COMPLETED') {
-          axios.post("https://vm.aleo.org/api" + "/testnet3/transaction/broadcast", ev.data.executeTransaction, {
+          axios.post(aleoUrl + "/testnet3/transaction/broadcast", ev.data.executeTransaction, {
             headers: {
               'Content-Type': 'application/json',
             }

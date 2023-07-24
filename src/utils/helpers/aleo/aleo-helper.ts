@@ -12,6 +12,7 @@ export const aleoHelper = ()=>{
     const privateKey = "";
     const fee = 0.1;
     const feeRecord =""
-    const url = "https://vm.aleo.org/api";
-    return {remoteProgram,aleoFunction,inputs,privateKey,fee,feeRecord,url}
+    const url = "https://chain.daosso.xyz";
+    const sync_url = "https://aleo.daosso.xyz";
+    return {remoteProgram,aleoFunction,inputs,privateKey,fee,feeRecord,url,sync_url}
 }

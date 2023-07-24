@@ -84,10 +84,12 @@ export default function UserPage() {
 
 
   useEffect(() => {
+    const { url: aleoUrl } = aleoHelper()
+
     workerExecRef.current = workerHelper();
     workerExecRef.current.addEventListener("message", ev => {
       if (ev.data.type == 'EXECUTION_TRANSACTION_COMPLETED') {
-        axios.post("https://vm.aleo.org/api" + "/testnet3/transaction/broadcast", ev.data.executeTransaction, {
+        axios.post(aleoUrl + "/testnet3/transaction/broadcast", ev.data.executeTransaction, {
           headers: {
             'Content-Type': 'application/json',
           }

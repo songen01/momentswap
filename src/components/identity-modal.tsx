@@ -22,11 +22,11 @@ export const IdentityModal = () => {
   const router = useRouter();
   const setNotifySuccess = useNotifyStatus((state) => state.success);
   const setNotifyReset = useNotifyStatus((state) => state.resetStatus);
-  const chainList = useChainList(s=>s.TYPE)
+  const chainList = useChainList(s => s.TYPE)
   const workerExecRef = useRef<Worker>();
-  const aleoPrivateKey = useAleoPrivateKey(s=>s.PK)    
-  const aleoRecords = useAleoRecords(s=>s.records)
-  const aleoAddress = useAleoPrivateKey(s=>s.Address)   
+  const aleoPrivateKey = useAleoPrivateKey(s => s.PK)
+  const aleoRecords = useAleoRecords(s => s.records)
+  const aleoAddress = useAleoPrivateKey(s => s.Address)
 
   useEffect(() => {
     avatarRef.current?.addEventListener("input", async () => {
@@ -41,7 +41,7 @@ export const IdentityModal = () => {
 
   useEffect(() => {
     workerExecRef.current = workerHelper();
-    
+
     (async () => {
       if (!address) {
         return;
@@ -60,94 +60,95 @@ export const IdentityModal = () => {
   };
 
   const saveIdentity = async () => {
-    const aleoIdentity = JSON.parse(window.localStorage.getItem("aleoRecords") as string)?.filter((t:any)=>t.result.indexOf("nick_name")>-1).sort((a,b)=>b.height-a.height)[0];
-    if(aleoIdentity.result.indexOf("nick_name")>-1){return alert("You have already registered your identity")}
+    const aleoIdentity = JSON.parse(window.localStorage.getItem("aleoRecords") as string)?.filter((t: any) => t.result.indexOf("nick_name") > -1).sort((a, b) => b.height - a.height)[0];
+    if (aleoIdentity.result.indexOf("nick_name") > -1) { return alert("You have already registered your identity") }
     if (!validateName(text)) {
       alert("The name is between 3 and 10 characters");
       return;
     }
-    
+
     setLoading(true);
 
 
-      setNotifySuccess();
-      if (chainList==="FIL"&&avatarSetting) {
-        
-      const {remoteProgram,aleoFunction,feeRecord,url} = aleoHelper()
+    setNotifySuccess();
+    if (chainList === "FIL" && avatarSetting) {
 
-        chainList==="FIL"? await setAvatar(avatarSetting):workerExecRef.current?.postMessage({
-          type: 'ALEO_EXECUTE_PROGRAM_ON_CHAIN',
-          remoteProgram,
-          aleoFunction:"setAvatar",
-          inputs:[avatarSetting],
-          privateKey:aleoPrivateKey,
-          fee: 0.1,
-          feeRecord:aleoRecords.filter(t=>t.result.indexOf("microcredits")>-1)[0].result,
-          url
-        });
-      }
-      if (chainList==="FIL"&&!mainDomain) {
+      const { remoteProgram, aleoFunction, feeRecord, url } = aleoHelper()
 
-        await (await registerMainDomain(text)).wait();
-      }
-      // const aleoMainDmmain = aleoRecords.filter(t=>t?.result?.indexOf("identification_number")>-1)[0].result
-      if (chainList==="ALEO") {
-      const feeRecord = JSON.parse(window.localStorage.getItem("aleoRecords") as string)?.filter((t:any)=>t.result.indexOf("microcredits")>-1).sort((a,b)=>b.height-a.height)[0];
+      chainList === "FIL" ? await setAvatar(avatarSetting) : workerExecRef.current?.postMessage({
+        type: 'ALEO_EXECUTE_PROGRAM_ON_CHAIN',
+        remoteProgram,
+        aleoFunction: "setAvatar",
+        inputs: [avatarSetting],
+        privateKey: aleoPrivateKey,
+        fee: 0.1,
+        feeRecord: aleoRecords.filter(t => t.result.indexOf("microcredits") > -1)[0].result,
+        url
+      });
+    }
+    if (chainList === "FIL" && !mainDomain) {
+
+      await (await registerMainDomain(text)).wait();
+    }
+    // const aleoMainDmmain = aleoRecords.filter(t=>t?.result?.indexOf("identification_number")>-1)[0].result
+    if (chainList === "ALEO") {
+      const feeRecord = JSON.parse(window.localStorage.getItem("aleoRecords") as string)?.filter((t: any) => t.result.indexOf("microcredits") > -1).sort((a, b) => b.height - a.height)[0];
+      const { url: aleoUrl } = aleoHelper()
       workerExecRef.current?.addEventListener("message", ev => {
         if (ev.data.type == 'EXECUTION_TRANSACTION_COMPLETED') {
-            axios.post("https://vm.aleo.org/api" + "/testnet3/transaction/broadcast", ev.data.executeTransaction, {
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            }).then(
-                (response:any) => {
-                    setNotifySuccess();
-                    var request = indexedDB.open('aleoDB', 1);
-  
-                      request.onsuccess = function(event:any) {
-                        var db = event.target.result;
-  
-                        var transaction = db.transaction(['AleoStore'], 'readwrite');
-                        var store = transaction.objectStore('AleoStore');
-  
-                        var deleteRequest = store.delete(feeRecord.id);
-  
-                        deleteRequest.onsuccess = function(event) {
-                          console.log('success');
-                        };
-  
-                        deleteRequest.onerror = function(event) {
-                          console.log('fail');
-                        };
-  
-                        transaction.oncomplete = function() {
-                          db.close();
-                        };
-                      };
-  
-                      request.onerror = function(event) {
-                        console.log('open db error');
-                      };
-                }
-            )
+          axios.post(aleoUrl + "/testnet3/transaction/broadcast", ev.data.executeTransaction, {
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          }).then(
+            (response: any) => {
+              setNotifySuccess();
+              var request = indexedDB.open('aleoDB', 1);
+
+              request.onsuccess = function (event: any) {
+                var db = event.target.result;
+
+                var transaction = db.transaction(['AleoStore'], 'readwrite');
+                var store = transaction.objectStore('AleoStore');
+
+                var deleteRequest = store.delete(feeRecord.id);
+
+                deleteRequest.onsuccess = function (event) {
+                  console.log('success');
+                };
+
+                deleteRequest.onerror = function (event) {
+                  console.log('fail');
+                };
+
+                transaction.oncomplete = function () {
+                  db.close();
+                };
+              };
+
+              request.onerror = function (event) {
+                console.log('open db error');
+              };
+            }
+          )
         } else if (ev.data.type == 'ERROR') {
-            alert(ev.data.errorMessage);
-            console.log(ev.data.errorMessage);
-          }
-    });
-      const {remoteProgram,url} = aleoHelper()
-        workerExecRef.current?.postMessage({
-          type: 'ALEO_EXECUTE_PROGRAM_ON_CHAIN',
-          remoteProgram,
-          aleoFunction:"create_public_identifier",
-          inputs:[aleoAddress,...splitAndAddField(base58ToInteger(stringToBase58(avatarSetting)),"field",4),base58ToInteger(stringToBase58(text))+"field"],
-          privateKey:aleoPrivateKey,
-          fee: 0.1,
-          feeRecord:feeRecord.result,
-          url
-        });      
-      }
-      setNotifyReset();
+          alert(ev.data.errorMessage);
+          console.log(ev.data.errorMessage);
+        }
+      });
+      const { remoteProgram, url } = aleoHelper()
+      workerExecRef.current?.postMessage({
+        type: 'ALEO_EXECUTE_PROGRAM_ON_CHAIN',
+        remoteProgram,
+        aleoFunction: "create_public_identifier",
+        inputs: [aleoAddress, ...splitAndAddField(base58ToInteger(stringToBase58(avatarSetting)), "field", 4), base58ToInteger(stringToBase58(text)) + "field"],
+        privateKey: aleoPrivateKey,
+        fee: 0.1,
+        feeRecord: feeRecord.result,
+        url
+      });
+    }
+    setNotifyReset();
 
     setLoading(false);
     // router.reload();
@@ -202,7 +203,7 @@ export const IdentityModal = () => {
               onChange={(e) => setText(e.target.value)}
               className="input input-bordered w-1/2"
             />
-            <span className="font-semibold">{chainList==="FIL"? ".fil":".aleo"}</span>
+            <span className="font-semibold">{chainList === "FIL" ? ".fil" : ".aleo"}</span>
           </div>
           <div className="divider" />
           <div className="modal-action">

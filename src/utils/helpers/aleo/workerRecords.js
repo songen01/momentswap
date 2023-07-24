@@ -1,10 +1,13 @@
 import init, * as aleo from 'aleo-wasm-swift-decrypt-record';
 import axios from "axios";
+import {aleoHelper} from './aleo-helper';
 
   const handleDecrypt = async(response,viewKey,address,privateKey) => {
     let sn = 0;
     await aleo.default()
     console.log("start aleo", response.length);  
+    const { url: aleoUrl } = aleoHelper()
+
     for (let r of response) {
       const vk =aleo.ViewKey.from_string(viewKey);
       sn+=1;
@@ -21,7 +24,7 @@ import axios from "axios";
             const s = aleo.PrivateKey.from_string(privateKey).decryptrecords(JSON.stringify([ss]))
 
 
-            axios.get('https://vm.aleo.org/api/testnet3/find/transitionID/'+JSON.parse(s)[0].sn_id).then(e=>{
+            axios.get(aleoUrl +'/testnet3/find/transitionID/'+JSON.parse(s)[0].sn_id).then(e=>{
               console.log(e,"is used");
             },err=>{
             console.log(err,"not used");
